@@ -1,0 +1,57 @@
+﻿[ΓêÜ] Flutter (Channel stable, 3.32.8, on Microsoft Windows [Version 10.0.26200.7922], locale en-IN) [470ms]
+    ΓÇó Flutter version 3.32.8 on channel stable at C:\Flutter\flutter_windows_3.32.8-stable\flutter
+    ΓÇó Upstream repository https://github.com/flutter/flutter.git
+    ΓÇó Framework revision edada7c56e (8 months ago), 2025-07-25 14:08:03 +0000
+    ΓÇó Engine revision ef0cd00091
+    ΓÇó Dart version 3.8.1
+    ΓÇó DevTools version 2.45.1
+
+[ΓêÜ] Windows Version (11 Home Single Language 64-bit, 25H2, 2009) [3.5s]
+
+[ΓêÜ] Android toolchain - develop for Android devices (Android SDK version 37.0.0-rc2) [10.5s]
+    ΓÇó Android SDK at C:\Users\thama\AppData\Local\Android\sdk
+    ΓÇó Platform android-35, build-tools 37.0.0-rc2
+    ΓÇó Java binary at: C:\Program Files\Android\Android Studio\jbr\bin\java
+      This is the JDK bundled with the latest Android Studio installation on this machine.
+      To manually set the JDK path, use: `flutter config --jdk-dir="path/to/jdk"`.
+    ΓÇó Java version OpenJDK Runtime Environment (build 21.0.9+-14787801-b1163.94)
+    ΓÇó All Android licenses accepted.
+
+[ΓêÜ] Chrome - develop for the web [19ms]
+    ΓÇó Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[X] Visual Studio - develop Windows apps [18ms]
+    X Visual Studio not installed; this is necessary to develop Windows apps.
+      Download at https://visualstudio.microsoft.com/downloads/.
+      Please install the "Desktop development with C++" workload, including all of its default components
+
+[ΓêÜ] Android Studio (version 2025.3.2) [15ms]
+    ΓÇó Android Studio at C:\Program Files\Android\Android Studio
+    ΓÇó Flutter plugin can be installed from:
+       https://plugins.jetbrains.com/plugin/9212-flutter
+    ΓÇó Dart plugin can be installed from:
+       https://plugins.jetbrains.com/plugin/6351-dart
+    ΓÇó Java version OpenJDK Runtime Environment (build 21.0.9+-14787801-b1163.94)
+
+[ΓêÜ] IntelliJ IDEA Community Edition (version 2025.1) [13ms]
+    ΓÇó IntelliJ at C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.1.3
+    ΓÇó Flutter plugin can be installed from:
+       https://plugins.jetbrains.com/plugin/9212-flutter
+    ΓÇó Dart plugin can be installed from:
+       https://plugins.jetbrains.com/plugin/6351-dart
+
+[ΓêÜ] VS Code (version unknown) [13ms]
+    ΓÇó VS Code at C:\Users\thama\AppData\Local\Programs\Microsoft VS Code
+    ΓÇó Flutter extension version 3.130.0
+    X Unable to determine VS Code version.
+
+[ΓêÜ] Connected device (4 available) [3.2s]
+    ΓÇó 23076RN4BI (mobile) ΓÇó 633c1477f5fd ΓÇó android-arm64  ΓÇó Android 15 (API 35)
+    ΓÇó Windows (desktop)   ΓÇó windows      ΓÇó windows-x64    ΓÇó Microsoft Windows [Version 10.0.26200.7922]
+    ΓÇó Chrome (web)        ΓÇó chrome       ΓÇó web-javascript ΓÇó Google Chrome 145.0.7632.160
+    ΓÇó Edge (web)          ΓÇó edge         ΓÇó web-javascript ΓÇó Microsoft Edge 145.0.3800.97
+
+[ΓêÜ] Network resources [2.0s]
+    ΓÇó All expected network resources are available.
+
+! Doctor found issues in 1 category.
