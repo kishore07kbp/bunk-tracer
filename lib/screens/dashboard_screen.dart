@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/api_service.dart';
 import '../services/ble_service.dart';
 import '../services/storage_service.dart';
+import '../services/permission_service.dart';
+import '../services/bluetooth_state_service.dart';
 import 'login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -16,21 +20,106 @@ class DashboardScreen extends StatefulWidget {
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   bool isAdvertising = false;
+  bool _userWantsToAdvertise = false; // Tracks intent even if temporarily stopped
+  StreamSubscription<BluetoothAdapterState>? _btStateSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initBluetoothMonitoring();
     // Auto-start BLE advertising as per workflow
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print("---------------------------------");
-      print("ROLL NUMBER (EXISTING SESSION): ${widget.roll}");
-      print("PERMANENT ID (EXISTING SESSION): ${widget.permanentID}");
-      print("---------------------------------");
-      startBLE();
+      startBLE(isAutoStart: true);
     });
     _checkAuthAndRedirect(); // Check authentication status on init
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _btStateSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Only attempt start if user intent is true AND hardware isn't already active
+      if (_userWantsToAdvertise && !isAdvertising) {
+        _startBLEInternal();
+      }
+    } else if (state == AppLifecycleState.paused || 
+               state == AppLifecycleState.inactive || 
+               state == AppLifecycleState.detached) {
+      if (isAdvertising) {
+        // Stop hardware but keep user intent true for resume
+        _stopBLEInternal();
+      }
+    }
+  }
+
+  void _initBluetoothMonitoring() {
+    _btStateSubscription = BluetoothStateService.adapterStatusStream.listen((state) {
+      if (state == BluetoothAdapterState.off && isAdvertising) {
+        stopBLE();
+        _showBluetoothOffDialog();
+      }
+    });
+  }
+
+  void _showBluetoothOffDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Bluetooth Required"),
+        content: Text("Bluetooth is currently OFF. Please turn it back on to continue advertising."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("CANCEL"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await BluetoothStateService.turnOn();
+            },
+            child: Text("TURN ON", style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionDeniedMessage(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        action: SnackBarAction(
+          label: "SETTINGS",
+          textColor: Colors.white,
+          onPressed: () => openAppSettings(),
+        ),
+      ),
+    );
+  }
+
+  Future<String> _getMissingPermissionNames() async {
+    List<Permission> denied = await PermissionService.getDeniedPermissions();
+    if (denied.isEmpty) return "None";
+    
+    return denied.map((p) {
+      if (p == Permission.bluetoothAdvertise || p == Permission.bluetoothConnect || p == Permission.bluetoothScan) {
+        return "Nearby Devices";
+      }
+      if (p == Permission.location) return "Location";
+      if (p == Permission.bluetooth) return "Bluetooth (Legacy)";
+      return p.toString().split('.').last;
+    }).toSet().join(", "); // Using toSet() to avoid duplicates like "Nearby Devices, Nearby Devices"
   }
 
   void _checkAuthAndRedirect() async {
@@ -51,26 +140,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  startBLE() async {
-    await [
-      Permission.bluetooth,
-      Permission.bluetoothAdvertise,
-      Permission.bluetoothConnect,
-      Permission.bluetoothScan,
-      Permission.location,
-    ].request();
+  bool _isCheckingPermissions = false;
+  DateTime? _lastCheckTime;
 
-    await BleService.startAdvertising(widget.permanentID);
-    setState(() {
-      isAdvertising = true;
-    });
+  startBLE({bool isAutoStart = false}) {
+    _userWantsToAdvertise = true;
+    _startBLEInternal(isAutoStart: isAutoStart);
+  }
+
+  _startBLEInternal({bool isAutoStart = false}) async {
+    // 1. Re-entrancy Guard
+    if (_isCheckingPermissions) return;
+
+    // 2. Cooldown Guard (to prevent UI flickering/looping)
+    if (_lastCheckTime != null && 
+        DateTime.now().difference(_lastCheckTime!).inSeconds < 2) {
+      return;
+    }
+    
+    _isCheckingPermissions = true;
+    _lastCheckTime = DateTime.now();
+
+    try {
+      // 1. Check Condition: Foreground Only
+      if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) return;
+
+      // 2. Check & Request Permissions
+      PermissionState pState = await PermissionService.requestPermissions();
+      if (pState != PermissionState.granted) {
+        if (!isAutoStart && mounted) {
+          String missing = await _getMissingPermissionNames();
+          _showPermissionDeniedMessage("Missing required permissions: $missing");
+        }
+        return;
+      }
+
+      // 3. Check Bluetooth State
+      bool isBtOn = await BluetoothStateService.isBluetoothOn();
+      if (!isBtOn) {
+        _showBluetoothOffDialog();
+        return;
+      }
+
+      // 4. Start Advertising
+      await BleService.startAdvertising(widget.permanentID);
+      if (mounted) {
+        setState(() {
+          isAdvertising = true;
+        });
+      }
+    } finally {
+      _isCheckingPermissions = false;
+    }
   }
 
   stopBLE() async {
+    _userWantsToAdvertise = false;
+    await _stopBLEInternal();
+  }
+
+  _stopBLEInternal() async {
     await BleService.stopAdvertising();
-    setState(() {
-      isAdvertising = false;
-    });
+    if (mounted) {
+      setState(() {
+        isAdvertising = false;
+      });
+    }
   }
 
   logout() async {

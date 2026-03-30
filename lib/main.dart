@@ -4,6 +4,7 @@ import 'package:attendance_app/services/storage_service.dart';
 import 'package:attendance_app/services/device_service.dart';
 import 'package:attendance_app/screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
+import 'utils/permissions.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,4 +37,15 @@ class SmartAttendanceApp extends StatelessWidget {
       home: initialScreen,
     );
   }
+}
+
+void initBLE() async {
+  bool ok = await checkPermissions();
+
+  if (!ok) {
+    print("❌ Permissions not granted");
+    return;
+  }
+
+  print("✅ Permissions granted");
 }

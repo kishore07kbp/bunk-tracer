@@ -83,6 +83,22 @@ class MainActivity: FlutterActivity() {
     ---------------------------------------
     */
     private fun stopAdvertising() {
-        advertiser?.stopAdvertising(advertiseCallback)
+        try {
+            advertiser?.stopAdvertising(advertiseCallback)
+            advertiser = null
+            advertiseCallback = null
+        } catch (e: Exception) {
+            println("⚠️ Error stopping BLE: ${e.message}")
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopAdvertising()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopAdvertising()
     }
 }
